@@ -1,3 +1,4 @@
+const { StaleWhileRevalidate } = require('workbox-strategies');
 const { offlineFallback, warmStrategyCache } = require('workbox-recipes');
 const { CacheFirst } = require('workbox-strategies');
 const { registerRoute } = require('workbox-routing');
@@ -27,4 +28,21 @@ warmStrategyCache({
 registerRoute(({ request }) => request.mode === 'navigate', pageCache);
 
 // TODO: Implement asset caching
-//registerRoute();
+/*  StaleWhileRevalidate strategy for css and js files 
+    Send from cache, then request network and store the response file in cache
+    Next time, send the version from cache, and request network again
+ */
+
+registerRoute(
+  ({ request }) => [ 'style', 'script', 'worker'].includes(request.destination),
+  new StaleWhileRevalidate({
+    cacheName: 'asset-cache',
+    plugins: [
+      // only cache good responses 
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+    ],
+  }) 
+);
+
